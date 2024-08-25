@@ -25,12 +25,16 @@ To install the Recipe Ingredient Generator and Crawler, follow these steps:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/recipe-ingredient-generator.git
-   cd recipe-ingredient-generator
+   git clone https://github.com/SmartChefTech/Smart-Chef-Assistant.git
+   cd recipe
    ```
 
 2. Run the setup script:
-   ```
+
+   <details>
+   <summary>Linux</summary>
+
+   ```bash
    chmod +x setup.sh
    ./setup.sh
    ```
@@ -39,6 +43,20 @@ To install the Recipe Ingredient Generator and Crawler, follow these steps:
    - Create a Conda environment named `recipe-app`
    - Install all necessary dependencies
    - Set up the SQLite database with sample data
+   </details>
+
+   <details>
+   <summary>Windows</summary>
+
+   ```cmd
+   setup.bat
+   ```
+
+   This script will:
+   - Create a Conda environment named `recipe-app`
+   - Install all necessary dependencies
+   - Set up the SQLite database with sample data
+   </details>
 
 ## Usage
 
@@ -49,19 +67,22 @@ To use the Recipe Ingredient Generator and Crawler:
    conda activate recipe-app
    ```
 
-2. Run the main application:
+2. To run the unit tests:
    ```
+   python -m unittest connector_test.py
+   python -m unittest crawler_test.py
+   ```
+
+3. Run the application:
+   ```
+   # Navigate to the Smart-Chef-Assistant root directory
+   cd Smart-Chef-Assistant
+
+   # Initialize the database with recipes from Wikipedia
+   python main-recipe-init.py
+
+   # Run the CLI tool to fetch dishes and ingredients
    python main-recipe-app.py
-   ```
-
-3. To run the web crawler and populate the database:
-   ```
-   python recipe_crawler.py
-   ```
-
-4. To run the unit tests:
-   ```
-   python -m unittest test_recipe_crawler.py
    ```
 
 ## Project Structure

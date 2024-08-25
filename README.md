@@ -21,6 +21,45 @@ Follow the [Setup Guide](docs/SetupGuide.md) to install and configure the projec
 
 Refer to the [User Guide](docs/UserGuide.md) for detailed instructions on how to use the app.
 
+## Feature 1: Generate ingredient lists with quantities based on chosen dishes.
+
+### Usage Example
+Here's an example of how to get the national dishes from wikipedia:
+```
+(recipe-app) Smart-Chef-Assistant>python main-recipe-init.py   
+```
+
+Here's an example of how to use the Recipe Ingredient Generator:
+```
+(recipe-app) Smart-Chef-Assistant>python main-recipe-app.py   
+INFO:__main__:Welcome to the Recipe Ingredient Generator!
+2024-08-25 16:19:14,767 - INFO  - main-recipe-app - main - 32 - Welcome to the Recipe Ingredient Generator!
+Available Recipes:
+1: Spaghetti
+2: Pizza
+3: Croissant
+...
+Enter the ID of the recipe you want to select: 2
+Ingredient List:
+1.0 ball Pizza dough
+0.5 cup Tomato sauce
+1.0 cup Mozzarella cheese
+as desired Toppings (optional)
+1.0 tablespoon Olive oil
+Would you like to select another recipe? (y/n): y
+Enter the ID of the recipe you want to select: 3
+Ingredient List:
+4.0 cups all-purpose flour
+1.0 cup unsalted butter
+1.0 cup milk
+2.25 teaspoons active dry yeast
+0.25 cup granulated sugar
+2.0 teaspoons salt
+0.25 cup warm water
+1.0 large egg
+...
+```
+
 ## Contributing
 
 We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) for more information.

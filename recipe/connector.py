@@ -1,7 +1,24 @@
+import logging
 import sqlite3
+from typing import List, Dict, Any
 
-def create_database():
-    conn = sqlite3.connect('recipes.db')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def create_database(conn: sqlite3.Connection) -> None:
+    """
+    Create the database tables if they do not exist.
+
+    Args:
+        conn (sqlite3.Connection): The database connection.
+
+    Raises:
+        ValueError: If the connection is None.
+    """
+    if conn is None:
+        raise ValueError("A database connection must be provided.")
+    
     cursor = conn.cursor()
 
     # Create Recipes table
@@ -36,85 +53,111 @@ def create_database():
     ''')
 
     conn.commit()
-    conn.close()
 
-def insert_sample_data():
-    conn = sqlite3.connect('recipes.db')
-    cursor = conn.cursor()
+def insert_recipe_to_db(conn: sqlite3.Connection, recipe_data: Dict[str, Any]) -> None:
+    """
+    Insert a new recipe into the database.
 
-    # Insert a sample recipe
-    cursor.execute("INSERT INTO Recipes (name, description, instructions) VALUES (?, ?, ?)",
-                   ("Spaghetti Carbonara", "A classic Italian pasta dish", "1. Cook pasta. 2. Fry bacon. 3. Mix eggs and cheese. 4. Combine all ingredients."))
-    recipe_id = cursor.lastrowid
+    Args:
+        conn (sqlite3.Connection): The database connection.
+        recipe_data (Dict[str, Any]): The recipe data to insert.
 
-    # Insert sample ingredients
-    ingredients = [("Spaghetti",), ("Eggs",), ("Bacon",), ("Parmesan Cheese",)]
-    cursor.executemany("INSERT OR IGNORE INTO Ingredients (name) VALUES (?)", ingredients)
-
-    # Get ingredient IDs
-    cursor.execute("SELECT id, name FROM Ingredients WHERE name IN (?, ?, ?, ?)", 
-                   ("Spaghetti", "Eggs", "Bacon", "Parmesan Cheese"))
-    ingredient_ids = {name: id for id, name in cursor.fetchall()}
-
-    # Insert recipe ingredients
-    recipe_ingredients = [
-        (recipe_id, ingredient_ids["Spaghetti"], 400, "g"),
-        (recipe_id, ingredient_ids["Eggs"], 4, "pieces"),
-        (recipe_id, ingredient_ids["Bacon"], 200, "g"),
-        (recipe_id, ingredient_ids["Parmesan Cheese"], 100, "g")
-    ]
-    cursor.executemany("INSERT INTO RecipeIngredients (recipe_id, ingredient_id, quantity, unit) VALUES (?, ?, ?, ?)", 
-                       recipe_ingredients)
-
-    conn.commit()
-    conn.close()
-
-def insert_recipe_to_db(recipe_data):
-    conn = sqlite3.connect('recipes.db')
-    cursor = conn.cursor()
-
-    # Insert recipe
-    cursor.execute('''
-    INSERT INTO Recipes (name, description, instructions)
-    VALUES (?, ?, ?)
-    ''', (recipe_data['name'], recipe_data['description'], recipe_data['instructions']))
-    recipe_id = cursor.lastrowid
+    Raises:
+        ValueError: If the connection is None.
+    """
+    if conn is None:
+        raise ValueError("A database connection must be provided.")
     
-    # Insert ingredients and recipe_ingredients
-    for ingredient in recipe_data['ingredients']:
-        # Insert or get ingredient
+    cursor = conn.cursor()
+
+    try:
+        # Insert recipe
         cursor.execute('''
-        INSERT OR IGNORE INTO Ingredients (name)
-        VALUES (?)
-        ''', (ingredient['name'],))
-        cursor.execute('SELECT id FROM Ingredients WHERE name = ?', (ingredient['name'],))
-        ingredient_id = cursor.fetchone()[0]
+        INSERT INTO Recipes (name, description, instructions)
+        VALUES (?, ?, ?)
+        ''', (recipe_data['dish_name'], recipe_data.get('description', ''), recipe_data.get('instructions', '')))
+        recipe_id = cursor.lastrowid
         
-        # Insert recipe_ingredient
-        cursor.execute('''
-        INSERT INTO RecipeIngredients (recipe_id, ingredient_id, quantity, unit)
-        VALUES (?, ?, ?, ?)
-        ''', (recipe_id, ingredient_id, ingredient['quantity'], ingredient['unit']))
-    
-    conn.commit()
-    conn.close()
+        # Insert ingredients and recipe_ingredients
+        for ingredient in recipe_data['ingredients']:
+            # Insert or get ingredient
+            cursor.execute('''
+            INSERT OR IGNORE INTO Ingredients (name)
+            VALUES (?)
+            ''', (ingredient['ingredient_name'],))
+            cursor.execute('SELECT id FROM Ingredients WHERE name = ?', (ingredient['ingredient_name'],))
+            ingredient_id = cursor.fetchone()[0]
+            
+            # Insert recipe_ingredient
+            cursor.execute('''
+            INSERT INTO RecipeIngredients (recipe_id, ingredient_id, quantity, unit)
+            VALUES (?, ?, ?, ?)
+            ''', (recipe_id, ingredient_id, ingredient['quantity'], ingredient['unit']))
+        
+        conn.commit()
+    except sqlite3.Error as e:
+        logger.error(f"An error occurred: {e}")
+        conn.rollback()
+    except KeyError as e:
+        logger.error(f"Missing key in recipe data: {e}")
+        conn.rollback()
 
-def get_recipes():
-    conn = sqlite3.connect('recipes.db')
+def get_recipes(conn: sqlite3.Connection) -> List[tuple]:
+    """
+    Retrieve all recipes from the database.
+
+    Args:
+        conn (sqlite3.Connection): The database connection.
+
+    Returns:
+        List[tuple]: A list of recipes with their IDs and names.
+
+    Raises:
+        ValueError: If the connection is None.
+    """
+    if conn is None:
+        raise ValueError("A database connection must be provided.")
+    
     cursor = conn.cursor()
     cursor.execute("SELECT id, name FROM Recipes")
     recipes = cursor.fetchall()
-    conn.close()
     return recipes
 
-def display_recipes():
-    recipes = get_recipes()
+def display_recipes(conn: sqlite3.Connection) -> None:
+    """
+    Display all recipes in the database.
+
+    Args:
+        conn (sqlite3.Connection): The database connection.
+
+    Raises:
+        ValueError: If the connection is None.
+    """
+    if conn is None:
+        raise ValueError("A database connection must be provided.")
+    
+    recipes = get_recipes(conn)
     print("Available Recipes:")
     for id, name in recipes:
         print(f"{id}: {name}")
 
-def select_recipe():
-    display_recipes()
+def select_recipe(conn: sqlite3.Connection) -> int:
+    """
+    Prompt the user to select a recipe by ID.
+
+    Args:
+        conn (sqlite3.Connection): The database connection.
+
+    Returns:
+        int: The selected recipe ID.
+
+    Raises:
+        ValueError: If the connection is None.
+    """
+    if conn is None:
+        raise ValueError("A database connection must be provided.")
+    
+    display_recipes(conn)
     while True:
         try:
             recipe_id = int(input("Enter the ID of the recipe you want to select: "))
@@ -122,8 +165,23 @@ def select_recipe():
         except ValueError:
             print("Please enter a valid number.")
 
-def generate_ingredient_list(recipe_id):
-    conn = sqlite3.connect('recipes.db')
+def generate_ingredient_list(conn: sqlite3.Connection, recipe_id: int) -> List[str]:
+    """
+    Generate a list of ingredients for a specific recipe.
+
+    Args:
+        conn (sqlite3.Connection): The database connection.
+        recipe_id (int): The ID of the recipe.
+
+    Returns:
+        List[str]: A list of formatted ingredient strings.
+
+    Raises:
+        ValueError: If the connection is None.
+    """
+    if conn is None:
+        raise ValueError("A database connection must be provided.")
+    
     cursor = conn.cursor()
     
     # Query to get ingredients for a specific recipe
@@ -137,8 +195,6 @@ def generate_ingredient_list(recipe_id):
     cursor.execute(query, (recipe_id,))
     ingredients = cursor.fetchall()
     
-    conn.close()
-    
     # Format the ingredients
     ingredient_list = [
         f"{ingredient[1]} {ingredient[2]} {ingredient[0]}"
@@ -147,18 +203,27 @@ def generate_ingredient_list(recipe_id):
     
     return ingredient_list
 
-def display_ingredient_list(recipe_id):
-    ingredients = generate_ingredient_list(recipe_id)
+def display_ingredient_list(conn: sqlite3.Connection, recipe_id: int) -> None:
+    """
+    Display the ingredient list for a specific recipe.
+
+    Args:
+        conn (sqlite3.Connection): The database connection.
+        recipe_id (int): The ID of the recipe.
+
+    Raises:
+        ValueError: If the connection is None.
+    """
+    if conn is None:
+        raise ValueError("A database connection must be provided.")
+    
+    ingredients = generate_ingredient_list(conn, recipe_id)
     print("Ingredient List:")
     for ingredient in ingredients:
         print(f"- {ingredient}")
 
 # Example usage:
+# conn = sqlite3.connect('recipes.db')
 # recipe_data = scrape_recipe("Coq au Vin")
-# insert_recipe_to_db(recipe_data)
-
-if __name__ == "__main__":
-    create_database()
-    insert_sample_data()
-    insert_recipe_to_db({})
-    print("Database created and sample data inserted.")
+# insert_recipe_to_db(conn, recipe_data)
+# conn.close()

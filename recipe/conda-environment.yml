@@ -8,4 +8,4 @@ dependencies:
   - pip:
     - tabulate
     - requests
-    - beautifulsoup4
+    - openai
